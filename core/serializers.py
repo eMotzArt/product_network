@@ -57,6 +57,7 @@ class AgentCreateSerializer(serializers.ModelSerializer):
         instance.save()
         return instance
 
+
 class UserLoginSerializer(serializers.Serializer):
     email = serializers.CharField(required=True)
     password = serializers.CharField(required=True, style={'input_type': 'password'})
@@ -66,6 +67,7 @@ class UserLoginSerializer(serializers.Serializer):
         if not user:
             raise serializers.ValidationError('Username or password is incorrect')
         return attrs
+
 
 class EnterprisesListSerializer(serializers.ModelSerializer):
     contact = ContactSerializer()

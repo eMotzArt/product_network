@@ -42,7 +42,6 @@ class ProductOrderSerializer(serializers.Serializer):
             instance.save()
         return instance
 
-
     class Meta:
         model = Product
         fields = '__all__'

@@ -8,9 +8,11 @@ class IsFactory(permissions.BasePermission):
     def has_permission(self, request: Request, view) -> bool:
         return request.user.role == User.Role.factory
 
+
 class IsAgent(permissions.BasePermission):
     def has_permission(self, request: Request, view) -> bool:
         return request.user.role in [User.Role.trader, User.Role.retailer]
+
 
 class IsActive(permissions.BasePermission):
     def has_permission(self, request: Request, view) -> bool:

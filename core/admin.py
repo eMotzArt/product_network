@@ -9,7 +9,6 @@ class CustomUserAdmin(admin.ModelAdmin):
     ordering = ('email',)
     search_fields = ('email', )
     list_filter = ('contact__city__city_name', )
-    # exclude = ('password', 'first_name', 'last_name', 'username', 'date_joined')
     actions = ['set_debts_to_zero']
     fieldsets = (
         ('Personal info', {'fields': ('name', 'email', 'contact', 'supplier', 'debts', 'role')}),
