@@ -1,9 +1,12 @@
 from django.contrib.auth import get_user_model, login, logout
 from rest_framework.generics import CreateAPIView, GenericAPIView, ListAPIView
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
-from core.serializers import AgentCreateSerializer, UserLoginSerializer
+from core.serializers import AgentCreateSerializer, UserLoginSerializer, EnterprisesListSerializer
 from goods.models import Product
+from goods.permissions import IsActive
 
 USER_MODEL = get_user_model()
 
@@ -28,3 +31,13 @@ class LoginLogoutView(GenericAPIView):
     def delete(self, request):
         logout(request)
         return Response({'status': 'Successfully logged out'}, status=204)
+
+class EnterprisesView(ListAPIView):
+    serializer_class = EnterprisesListSerializer
+    queryset = USER_MODEL.objects.all()
+    permission_classes = [IsAuthenticated, IsActive]
+    def get_queryset(self):
+        country_filter = self.request.query_params.get('country', None)
+        if country_filter:
+            return self.queryset.filter(contact__country__country_name=country_filter)
+        return self.queryset.all()

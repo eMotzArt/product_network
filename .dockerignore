@@ -1,0 +1,12 @@
+# ignore all
+**
+
+# except
+!core/**
+!goods/**
+!product_network/**
+!manage.py
+!.env
+!poetry.lock
+!pyproject.toml
+!entrypoint.sh

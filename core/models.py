@@ -1,5 +1,5 @@
 from django.contrib.auth.base_user import AbstractBaseUser
-from django.contrib.auth.models import AbstractUser, PermissionsMixin, UserManager
+from django.contrib.auth.models import AbstractUser, PermissionsMixin
 from django.db import models
 
 from core.manager import CustomUserManager
@@ -11,6 +11,10 @@ class Country(models.Model):
     def __str__(self):
         return self.country_name
 
+    class Meta:
+        verbose_name = 'Страна'
+        verbose_name_plural = 'Страны'
+
 
 class City(models.Model):
     city_name = models.CharField(max_length=50)
@@ -18,12 +22,23 @@ class City(models.Model):
     def __str__(self):
         return self.city_name
 
+    class Meta:
+        verbose_name = 'Город'
+        verbose_name_plural = 'Города'
+
 
 class Contact(models.Model):
     country = models.ForeignKey(Country, on_delete=models.DO_NOTHING)
     city = models.ForeignKey(City, on_delete=models.DO_NOTHING)
     street = models.CharField(max_length=50, blank=False)
     house = models.IntegerField(blank=False)
+
+    def __str__(self):
+        return f"{self.country}, {self.city}, {self.street}, {self.house}"
+
+    class Meta:
+        verbose_name = 'Контакты'
+        verbose_name_plural = 'Контакты'
 
 
 class User(AbstractBaseUser, PermissionsMixin):
@@ -40,13 +55,17 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     name = models.CharField(max_length=150, blank=False, unique=True, verbose_name='Название')
     email = models.EmailField(blank=False, unique=True, verbose_name='Адрес email')
-    contact = models.ForeignKey(Contact, on_delete=models.CASCADE, verbose_name='Контакты')
-    # products = models.ForeignKey(Product, blank=True, related_name="owner", verbose_name='Товары')
-    supplier = models.ForeignKey('self', on_delete=models.DO_NOTHING, null=True, verbose_name='Поставщик')
+    contact = models.ForeignKey(Contact, null=True, on_delete=models.CASCADE, verbose_name='Контакты')
+    supplier = models.ForeignKey('self', on_delete=models.DO_NOTHING, null=True, blank=True, verbose_name='Поставщик')
     debts = models.FloatField(default=0.00, verbose_name='Долг')
     role = models.PositiveSmallIntegerField(choices=Role.choices, verbose_name="Роль предприятия\ИП")
     is_active = models.BooleanField(default=True)
     created = models.DateTimeField(auto_now_add=True, verbose_name="Создано")
+    is_staff = models.BooleanField(default=False)
 
     def __str__(self):
-        return self.email
+        return self.name
+
+    class Meta:
+        verbose_name = 'Предприятие'
+        verbose_name_plural = 'Предприятия'

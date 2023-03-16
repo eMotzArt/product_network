@@ -66,3 +66,9 @@ class UserLoginSerializer(serializers.Serializer):
         if not user:
             raise serializers.ValidationError('Username or password is incorrect')
         return attrs
+
+class EnterprisesListSerializer(serializers.ModelSerializer):
+    contact = ContactSerializer()
+    class Meta:
+        model = USER_MODEL
+        fields = ['name', 'email', 'debts', 'supplier', 'role', 'contact']
