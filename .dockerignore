@@ -2,7 +2,6 @@
 **
 
 # except
-!core/**
 !goods/**
 !product_network/**
 !manage.py

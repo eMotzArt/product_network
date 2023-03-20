@@ -3,45 +3,99 @@ from dotmap import DotMap
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
-from goods.models import Product
+from goods.models import Product, Contact, Supplier
 
 
-class ProductListCreateSerializer(serializers.ModelSerializer):
-    owner = serializers.HiddenField(default=serializers.CurrentUserDefault())
+class ContactSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Contact
+        fields = '__all__'
 
+class SubSupplierSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Supplier
+        fields = '__all__'
+
+class ProductSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
         fields = '__all__'
+class SupplierSerializer(serializers.ModelSerializer):
+    provider = SubSupplierSerializer()
+    contact = ContactSerializer()
+    products = ProductSerializer(many=True)
 
-class ProductOrderSerializer(serializers.Serializer):
-    name = serializers.CharField(required=True)
-    model = serializers.CharField(required=True)
-    count = serializers.IntegerField(required=True)
+    class Meta:
+        model = Supplier
+        fields = '__all__'
+        depth = 1
 
-    owner = serializers.HiddenField(default=serializers.CurrentUserDefault())
+class SupplierFactoryCreateSerializer(serializers.ModelSerializer):
+    contact = ContactSerializer()
+    products = ProductSerializer(many=True)
+
+
+    def create(self, validated_data):
+        products_data = validated_data.pop('products')
+        contact_data = DotMap(validated_data.pop('contact'))
+        with transaction.atomic():
+            contact = Contact.objects.create(country=contact_data.country, city=contact_data.city,
+                                             street=contact_data.street, house=contact_data.house,
+                                             email=contact_data.email)
+
+            products_instances = []
+            for product in products_data:
+                product_instance = Product.objects.create(**product)
+                products_instances.append(product_instance)
+
+            supplier = Supplier.objects.create(contact=contact, **validated_data)
+
+            for product in products_instances:
+                supplier.products.add(product)
+
+        return supplier
+
+    class Meta:
+        model = Supplier
+        fields = '__all__'
+
+
+class SupplierAgentCreateSerializer(serializers.ModelSerializer):
+    provider = serializers.PrimaryKeyRelatedField(queryset=Supplier.objects.all())
+    contact = ContactSerializer()
+    products = serializers.PrimaryKeyRelatedField(queryset=Product.objects.all(), many=True)
+
 
     def validate(self, attrs):
-        data = DotMap(attrs)
-        if not Product.objects.filter(name=data.name, model=data.model, owner=data.owner.supplier).exists():
-            raise ValidationError("Searched product not found in supplier store")
-        requested_product = Product.objects.get(name=data.name, model=data.model, owner=data.owner.supplier)
-        if requested_product.count < data.count:
-            raise ValidationError(f"Not enough goods in supplier store. Available only: {requested_product.count}")
+        products = attrs['products']
+        provider = attrs['provider']
+        provider_products = provider.products.all()
+        non_provider_products = []
+
+        for product in products:
+            if product not in provider_products:
+                non_provider_products.append(product.pk)
+
+        if non_provider_products:
+            raise ValidationError({'products': f'Данные продукты не относится к вашему поставщику. {non_provider_products}'})
+
         return attrs
 
     def create(self, validated_data):
-        data = DotMap(validated_data)
-        requested_product = Product.objects.get(name=data.name, model=data.model, owner=data.owner.supplier)
-        requested_product.count -= data.count
-        data.owner.debts += requested_product.price * data.count
+        products = validated_data.pop('products')
+
+        contact_data = DotMap(validated_data.pop('contact'))
         with transaction.atomic():
-            requested_product.save()
-            data.owner.save()
-            instance = Product.objects.create(name=data.name, model=data.model, count=data.count, owner=data.owner)
-            instance.price = requested_product.price
-            instance.save()
-        return instance
+            contact = Contact.objects.create(country=contact_data.country, city=contact_data.city,
+                                             street=contact_data.street, house=contact_data.house,
+                                             email=contact_data.email)
+            supplier = Supplier.objects.create(contact=contact, **validated_data)
+            for product in products:
+                supplier.products.add(product)
+
+        return supplier
+
 
     class Meta:
-        model = Product
+        model = Supplier
         fields = '__all__'

@@ -1,36 +1,33 @@
-from rest_framework.generics import CreateAPIView, ListAPIView
+from rest_framework.generics import ListAPIView, RetrieveDestroyAPIView, CreateAPIView
 from rest_framework.permissions import IsAuthenticated
 
-from goods.models import Product
-from goods.permissions import IsFactory, IsAgent, IsActive
-from goods.serializers import ProductListCreateSerializer, ProductOrderSerializer
+from goods.models import Supplier
+from goods.permissions import IsActive
+from goods.serializers import SupplierSerializer, SupplierFactoryCreateSerializer, \
+    SupplierAgentCreateSerializer
 
 
-class GoodsCreateView(CreateAPIView):
-    queryset = Product.objects.all()
-    permission_classes = [IsAuthenticated, IsFactory, IsActive]
-    serializer_class = ProductListCreateSerializer
-
-
-class GoodsOrderView(CreateAPIView):
-    queryset = Product.objects.all()
-    permission_classes = [IsAuthenticated, IsAgent, IsActive]
-    serializer_class = ProductOrderSerializer
-
-    def perform_create(self, serializer):
-        serializer.save(owner=self.request.user)
-
-
-class StorageView(ListAPIView):
-    serializer_class = ProductListCreateSerializer
+class SuppliersListView(ListAPIView):
+    serializer_class = SupplierSerializer
+    queryset = Supplier.objects.all()
     permission_classes = [IsAuthenticated, IsActive]
-    def get_queryset(self):
-        return Product.objects.filter(owner=self.request.user)
+
+class SupplierRetrieveDestroyView(RetrieveDestroyAPIView):
+    serializer_class = SupplierSerializer
+    queryset = Supplier.objects.all()
+    permission_classes = [IsAuthenticated, IsActive]
 
 
-class SupplierStorageView(ListAPIView):
-    serializer_class = ProductListCreateSerializer
-    permission_classes = [IsAuthenticated, IsActive, IsAgent]
+class SupplierCreateView(CreateAPIView):
+    serializer_classes = {
+        'factory': SupplierFactoryCreateSerializer,
+        'agent': SupplierAgentCreateSerializer
+    }
+    queryset = Supplier.objects.all()
+    permission_classes = [IsAuthenticated, IsActive]
 
-    def get_queryset(self):
-        return Product.objects.filter(owner=self.request.user.supplier)
+
+    def get_serializer_class(self, *args, **kwargs):
+        if self.request.data['role'] == Supplier.Role.factory:
+            return self.serializer_classes['factory']
+        return self.serializer_classes['agent']
