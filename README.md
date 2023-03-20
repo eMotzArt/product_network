@@ -1,77 +1,77 @@
 # Product-network
 
 <hr>
-<center> 
-
-<b>Возможности:</b>
-* Создать предприятия (завод, ритейлерскую сеть, индивидуального предпринимателя) <br>
-* Для завода: выпустить товар на рынок <br>
-* Для ритейлера\ИП: заказать товар у своего поставщика <br>
-* При заказе вся сумма за товар записывается заказчику в долг <br>
-
-
-</center>
-
-<hr/>
 
 ### Stack: Django, Python3.10, PostgreSQL
 
-## Запуск
-
-```sh
-docker-compose up -d --build
+## API
+#### Создать предприятие (завод - роль=0) - необходимо указать список товаров
 ```
-<hr/>
+url-post: goods/suppliers/create
 
-## Логика
-#### Этап1 -  регистрация предприятия
-```
-url-post: auth/reg
-
-{   
-    "name": "zavod1",
-    "email": "zavod1@test.ru",
-    "password": "zavod1password",
+{
     "contact": {
-        "street": "fabrician",
-        "house": 1,
+        "country": "Russia",
         "city": "Moscow",
-        "country": "Russia"
+        "street": "Fabrician",
+        "house": 1,
+        "email": "zavod1@test.ru"
     },
+    "products": [
+        {
+            "name": "tovar1",
+            "model": "model1"
+        },
+        {
+            "name": "tovar1",
+            "model": "model2"
+        },
+        {
+            "name": "tovar2",
+            "model": "model1"
+        }
+    ],
+    "name": "zavod1",
     "role": 0
 }
 ```
-#### role - роль предприятия. 0 - завод, 1 - ретейлерская сеть, 2 - Индивидуальный Предприниматель
-#### При регистрации ролей 1 и 2 требуется указать в теле запроса на регистрацию ID поставщика (пример: "supplier": 1)
-#### Возможность завода:
-* Выпускать товар
-```
-url-post: goods/make
 
+#### Создать предприятие (ритейлер или ИП - роль= 1 или 2 соответственно) - необходимо указать id поставщика, в списке товаров указываются id товаров
+#### Важно: id товаров должны соответстовать id товаров, выпускаемых поставщиком 
+```
+url-post: goods/suppliers/create
 
 {
-    "name": "Supply name",
-    "model": "Supply model",
-    "count": 1000,
-    "price": 444.25
+    "provider": 17,
+    "contact": {
+        "country": "Russia",
+        "city": "Moscow",
+        "street": "Agentskaya",
+        "house": 1,
+        "email": "agent1@test.ru"
+    },
+    "products": [1, 3],
+    "name": "r3",
+    "role": 1
 }
 ```
+<hr />
 
-* Просматривать свой склад (url-get: goods/storage)
-#### Возможности ретейлера и ИП:
-* Посмотреть свой склад (url-get: goods/storage)
-* Посмотреть склад поставщика (url-get: goods/supplier)
-* Заказать у поставщика товар
+#### Список всех поставщиков
 ```
-url-post: goods/order
-
-
-{
-    "name": "Supply name",
-    "model": "Supply model",
-    "count": 255
-}
+url-get: goods/suppliers
 ```
-#### Просмотр всех предприятий (url-get: enterprises)
-#### Просмотр всех предприятий с фильтрацией по стране (url-get: enterprises?country=Russia)
+<hr />
 
+
+#### Конкретный поставщик:
+```
+url-get: goods/suppliers/<id>
+```
+<hr />
+
+
+#### Удаление поставщика:
+```
+url-delete: goods/suppliers/<id>
+```
